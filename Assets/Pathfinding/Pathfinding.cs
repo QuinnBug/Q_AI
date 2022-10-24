@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-public class Pathfinding : MonoBehaviour
+namespace QAI_Pathfinding 
 {
-    #region Pathfinding Variables
+    public class Pathfinding : MonoBehaviour
+    {
+        #region Pathfinding Variables
     public enum Facing
     {
         NONE = 0,
@@ -44,170 +46,170 @@ public class Pathfinding : MonoBehaviour
     internal float distanceToTarget;
 
     #endregion
-
-    public void Start()
-    {
-        //targetObj = GameObject.FindGameObjectWithTag("Player");
-        target = transform.position;
-        findingPath = false;
-    }
-
-    public void ValuesUpdate()
-    {
-        //define the target here
-        if (targetObj != null && IsPosOnNavGrid(targetObj.transform.position))
+    
+        public void Start()
         {
-            target = navGrid.NodeFromWorld(targetObj.transform.position).worldPosition;
-            targetObjOnGrid = true;
+            //targetObj = GameObject.FindGameObjectWithTag("Player");
+            target = transform.position;
+            findingPath = false;
         }
-        else
+    
+        public void ValuesUpdate()
         {
-            targetObjOnGrid = false;
+            //define the target here
+            if (targetObj != null && IsPosOnNavGrid(targetObj.transform.position))
+            {
+                target = navGrid.NodeFromWorld(targetObj.transform.position).worldPosition;
+                targetObjOnGrid = true;
+            }
+            else
+            {
+                targetObjOnGrid = false;
+            }
+    
+            canSeeTarget = CheckLineToTarget(target);
+            distanceToTarget = Vector3.Distance(transform.position, target);
         }
-
-        canSeeTarget = CheckLineToTarget(target);
-        distanceToTarget = Vector3.Distance(transform.position, target);
-    }
-
-    public void PathingUpdate()
-    {
-        currentGridPosition = navGrid.NodeFromWorld(transform.position).gridPosition;
-        UpdateRoute(target);
-
-        if (currentRoute[0] != null)
+    
+        public void PathingUpdate()
         {
+            currentGridPosition = navGrid.NodeFromWorld(transform.position).gridPosition;
+            UpdateRoute(target);
+
             transform.rotation = UpdateDirection(currentRoute[0].worldPosition);
         }
-    }
-
-    public bool IsPosOnNavGrid(Vector3 pos)
-    {
-        return navGrid.NodeFromWorld(pos) != null;
-    }
-
-    private void UpdateRoute(Vector3 targetPosition)
-    {
-        if (!targetObjOnGrid)
+    
+        public bool IsPosOnNavGrid(Vector3 pos)
         {
-            return;
+            //return navGrid.NodeFromWorld(pos) != null;
+            return  true;
         }
-
-        if (canSeeTarget && distanceToTarget < maxStraightLineDistance)
+    
+        private void UpdateRoute(Vector3 targetPosition)
         {
-            posToMoveTo = targetPosition;
-            currentRoute.Clear();
-        }
-        else if (!findingPath)
-        {
-            StartCoroutine(FindPath(navGrid.NodeFromWorld(targetPosition).gridPosition));
-        }
-
-        if (currentRoute.Count > 1) //2 or more points
-        {
-            if (Vector3.Distance(transform.position, currentRoute[0].worldPosition) <= minDistanceToNode)
+            if (!targetObjOnGrid)
             {
-                currentRoute.RemoveAt(0);
+                return;
             }
-
-            posToMoveTo = currentRoute[0].worldPosition;
-        }
-        else
-        {
-            posToMoveTo = transform.position;
-        }
-    }
-
-    internal Quaternion UpdateDirection(Vector3 targetPosition)
-    {
-        Vector3 posYZero = new Vector3(transform.position.x, 0, transform.position.z);
-
-        if (targetObj != null)
-        {
-            posYZero.y = targetObj.transform.position.y;
-            return Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(targetObj.transform.position - posYZero, Vector3.up), 5 * Time.deltaTime);
-        }
-        else if (currentRoute.Count > 0)
-        {
-            return Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(currentRoute[0].worldPosYZero() - posYZero, Vector3.up), 5 * Time.deltaTime);
-        }
-
-        return transform.rotation;
-    }
-
-    private float DistanceFrom(Vector3Int start, Vector3Int end)
-    {
-        int dstX = Mathf.Abs(end.x - start.x);
-        int dstY = Mathf.Abs(end.y - start.y);
-        int dstZ = Mathf.Abs(end.z - start.z);
-
-        return Mathf.Sqrt((dstX * dstX) + (dstY * dstY) + (dstZ * dstZ));
-    }
-
-    IEnumerator FindPath(Vector3Int targetV3)
-    {
-        int groundMask = 1 << LayerMask.NameToLayer("Floor");
-        groundMask = groundMask & 1 << LayerMask.NameToLayer("Obstacle");
-
-        findingPath = true;
-
-        List<GridNode> open = new List<GridNode>();
-        HashSet<GridNode> closed = new HashSet<GridNode>();
-
-        GridNode targetNode = navGrid.NodeFromGridSpace(targetV3);
-        GridNode startNode = navGrid.NodeFromGridSpace(currentGridPosition);
-        GridNode closestNode = navGrid.NodeFromGridSpace(currentGridPosition);
-        GridNode currentNode = navGrid.NodeFromGridSpace(currentGridPosition);
-
-        List<GridNode> neighbours = new List<GridNode>();
-        float newMovementCostToNeighbour = 0;
-
-        open.Add(startNode);
-
-        while (open.Count > 0)
-        {
-            currentNode = open[0];
-
-            for (int i = 0; i < open.Count; i++)
+    
+            if (canSeeTarget && distanceToTarget < maxStraightLineDistance)
             {
-                if (open[i].fCost <= currentNode.fCost && open[i].hCost < currentNode.hCost)
+                posToMoveTo = targetPosition;
+                currentRoute.Clear();
+            }
+            else if (!findingPath)
+            {
+                StartCoroutine(FindPath(navGrid.NodeFromWorld(targetPosition).gridPosition));
+            }
+    
+            if (currentRoute.Count > 1) //2 or more points
+            {
+                if (Vector3.Distance(transform.position, currentRoute[0].worldPosition) <= minDistanceToNode)
                 {
-                    currentNode = open[i];
+                    currentRoute.RemoveAt(0);
                 }
+    
+                posToMoveTo = currentRoute[0].worldPosition;
             }
-
-            if (currentNode.hCost < closestNode.hCost)
+            else
             {
-                closestNode = currentNode;
+                posToMoveTo = transform.position;
             }
-
-            closed.Add(currentNode);
-            open.Remove(currentNode);
-
-            if (currentNode == targetNode)
+        }
+    
+        internal Quaternion UpdateDirection(Vector3 targetPosition)
+        {
+            Vector3 posYZero = new Vector3(transform.position.x, 0, transform.position.z);
+    
+            if (targetObj != null)
             {
-                RetracePath(startNode, targetNode);
-                yield return new WaitForSeconds(pathUpdateRate);
-                findingPath = false;
-                yield break;
+                posYZero.y = targetObj.transform.position.y;
+                return Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(targetObj.transform.position - posYZero, Vector3.up), 5 * Time.deltaTime);
             }
-
-            GetNeighbouringGridSpaces(currentNode, neighbours);
-
-            foreach (GridNode neighbourNode in neighbours)
+            else if (currentRoute.Count > 0)
             {
-                if (closed.Contains(neighbourNode) ||
-                    neighbourNode.pathable == false ||
-                    neighbourNode.worldPosition.y > currentNode.worldPosition.y + maxStepDistance ||
-                    Physics.Raycast(currentNode.worldPosition, neighbourNode.worldPosition - currentNode.worldPosition,
-                        Vector3.Distance(currentNode.worldPosition, neighbourNode.worldPosition)))
+                return Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(currentRoute[0].worldPosYZero() - posYZero, Vector3.up), 5 * Time.deltaTime);
+            }
+    
+            return transform.rotation;
+        }
+    
+        private float DistanceFrom(Vector3Int start, Vector3Int end)
+        {
+            int dstX = Mathf.Abs(end.x - start.x);
+            int dstY = Mathf.Abs(end.y - start.y);
+            int dstZ = Mathf.Abs(end.z - start.z);
+    
+            return Mathf.Sqrt((dstX * dstX) + (dstY * dstY) + (dstZ * dstZ));
+        }
+    
+        IEnumerator FindPath(Vector3Int targetV3)
+        {
+            int groundMask = 1 << LayerMask.NameToLayer("Floor");
+            groundMask = groundMask & 1 << LayerMask.NameToLayer("Obstacle");
+    
+            findingPath = true;
+    
+            List<GridNode> open = new List<GridNode>();
+            HashSet<GridNode> closed = new HashSet<GridNode>();
+    
+            GridNode targetNode = navGrid.NodeFromGridSpace(targetV3);
+            GridNode startNode = navGrid.NodeFromGridSpace(currentGridPosition);
+            GridNode closestNode = navGrid.NodeFromGridSpace(currentGridPosition);
+            GridNode currentNode = navGrid.NodeFromGridSpace(currentGridPosition);
+    
+            List<GridNode> neighbours = new List<GridNode>();
+            float newMovementCostToNeighbour = 0;
+    
+            open.Add(startNode);
+    
+            while (open.Count > 0)
+            {
+                currentNode = open[0];
+    
+                for (int i = 0; i < open.Count; i++)
                 {
-                    if (neighbourNode != targetNode)
+                    if (open[i].fCost <= currentNode.fCost && open[i].hCost < currentNode.hCost)
                     {
-                        continue;
+                        currentNode = open[i];
                     }
                 }
+    
+                if (currentNode.hCost < closestNode.hCost)
+                {
+                    closestNode = currentNode;
+                }
+    
+                closed.Add(currentNode);
+                open.Remove(currentNode);
+    
+                if (currentNode.gridPosition == targetNode.gridPosition)
+                {
+                    RetracePath(startNode, targetNode);
+                    yield return new WaitForSeconds(pathUpdateRate);
+                    findingPath = false;
+                    yield break;
+                }
+    
+                GetNeighbouringGridSpaces(currentNode, neighbours);
 
-                #region
+                for (int i = 0; i < neighbours.Count; i++)
+                {
+                    GridNode neighbourNode = neighbours[i];
+
+                    if (closed.Contains(neighbourNode) ||
+                        neighbourNode.pathable == false ||
+                        neighbourNode.worldPosition.y > currentNode.worldPosition.y + maxStepDistance ||
+                        Physics.Raycast(currentNode.worldPosition, neighbourNode.worldPosition - currentNode.worldPosition,
+                            Vector3.Distance(currentNode.worldPosition, neighbourNode.worldPosition)))
+                    {
+                        if (neighbourNode.gridPosition != targetNode.gridPosition)
+                        {
+                            continue;
+                        }
+                    }
+    
+                    #region
                 //if (currentNode.worldPosition.y > neighbourNode.worldPosition.y)
                 //{
                 //    RaycastHit hit;
@@ -227,234 +229,235 @@ public class Pathfinding : MonoBehaviour
 
                 //Debug.DrawLine(currentNode.worldPosition, neighbourNode.worldPosition, Color.red, 2);
                 #endregion
-
-                newMovementCostToNeighbour = currentNode.gCost + DistanceFrom(currentNode.gridPosition, neighbourNode.gridPosition);
-
-                //if XZ diagonal or higher, add cost to movement
-                if ((neighbourNode.gridPosition.x != currentNode.gridPosition.x && neighbourNode.gridPosition.z != currentNode.gridPosition.z)
-                    || neighbourNode.worldPosition.y > currentNode.worldPosition.y)
-                {
-                    newMovementCostToNeighbour += 0.5f;
-                }
-
-                newMovementCostToNeighbour += 0.2f * NonPathAdjacentCount(neighbourNode);
-
-                if (newMovementCostToNeighbour < neighbourNode.gCost || !open.Contains(neighbourNode))
-                {
-                    neighbourNode.gCost = newMovementCostToNeighbour;
-                    neighbourNode.hCost = DistanceFrom(neighbourNode.gridPosition, targetV3);
-                    neighbourNode.parent = currentNode;
-
-                    if (!open.Contains(neighbourNode))
+    
+                    newMovementCostToNeighbour = currentNode.gCost + DistanceFrom(currentNode.gridPosition, neighbourNode.gridPosition);
+    
+                    //if XZ diagonal or higher, add cost to movement
+                    if ((neighbourNode.gridPosition.x != currentNode.gridPosition.x && neighbourNode.gridPosition.z != currentNode.gridPosition.z)
+                        || neighbourNode.worldPosition.y > currentNode.worldPosition.y)
                     {
-                        open.Add(neighbourNode);
+                        newMovementCostToNeighbour += 0.5f;
                     }
-
-                    if (neighbourNode == targetNode)
+    
+                    newMovementCostToNeighbour += 0.2f * NonPathAdjacentCount(neighbourNode);
+    
+                    if (newMovementCostToNeighbour < neighbourNode.gCost || !open.Contains(neighbourNode))
                     {
-                        RetracePath(startNode, targetNode);
-                        yield return new WaitForSeconds(pathUpdateRate);
-                        findingPath = false;
-                        yield break;
+                        neighbourNode.gCost = newMovementCostToNeighbour;
+                        neighbourNode.hCost = DistanceFrom(neighbourNode.gridPosition, targetV3);
+                        neighbourNode.parentPos = currentNode.gridPosition;
+    
+                        if (!open.Contains(neighbourNode))
+                        {
+                            open.Add(neighbourNode);
+                        }
+    
+                        if (neighbourNode.gridPosition == targetNode.gridPosition)
+                        {
+                            RetracePath(startNode, targetNode);
+                            yield return new WaitForSeconds(pathUpdateRate);
+                            findingPath = false;
+                            yield break;
+                        }
                     }
                 }
             }
+    
+            if (Vector3.Distance(closestNode.worldPosition, targetNode.worldPosition) <= 10 /*0.1f*/)
+            {
+                Debug.Log(Vector3.Distance(closestNode.worldPosition, target) + " closest point distance");
+                RetracePath(startNode, closestNode);
+            }
+            else
+            {
+                Debug.Log("can't reach position");
+                currentRoute.Clear();
+            }
+    
+    
+            yield return new WaitForSeconds(pathUpdateRate);
+            findingPath = false;
+            yield break;
         }
-
-        if (Vector3.Distance(closestNode.worldPosition, targetNode.worldPosition) <= 10 /*0.1f*/)
+    
+        private List<GridNode> adjNeighbours = new List<GridNode>();
+        private int NonPathAdjacentCount(GridNode node)
         {
-            Debug.Log(Vector3.Distance(closestNode.worldPosition, target) + " closest point distance");
-            RetracePath(startNode, closestNode);
+            int adjacent = 0;
+            GetNeighbouringGridSpaces(node, adjNeighbours);
+            foreach (GridNode neighbour in adjNeighbours)
+            {
+                if (!neighbour.pathable)
+                {
+                    adjacent++;
+                }
+            }
+    
+            return adjacent;
         }
-        else
+    
+        private void RetracePath(GridNode startNode, GridNode targetNode)
         {
-            Debug.Log("can't reach position");
+            GridNode currentNode = targetNode;
             currentRoute.Clear();
-        }
-
-
-        yield return new WaitForSeconds(pathUpdateRate);
-        findingPath = false;
-        yield break;
-    }
-
-    private List<GridNode> adjNeighbours = new List<GridNode>();
-    private int NonPathAdjacentCount(GridNode node)
-    {
-        int adjacent = 0;
-        GetNeighbouringGridSpaces(node, adjNeighbours);
-        foreach (GridNode neighbour in adjNeighbours)
-        {
-            if (!neighbour.pathable)
+            while (currentNode.gridPosition != startNode.gridPosition)
             {
-                adjacent++;
+                currentRoute.Add(currentNode);
+                currentNode = navGrid.NodeFromGridSpace(currentNode.parentPos);
             }
+    
+            currentRoute.Reverse();
+            //SimplifyPath();
         }
-
-        return adjacent;
-    }
-
-    private void RetracePath(GridNode startNode, GridNode targetNode)
-    {
-        GridNode currentNode = targetNode;
-        currentRoute.Clear();
-        while (currentNode != startNode)
+    
+        private void SimplifyPath()
         {
-            currentRoute.Add(currentNode);
-            currentNode = currentNode.parent;
-        }
-
-        currentRoute.Reverse();
-        //SimplifyPath();
-    }
-
-    private void SimplifyPath()
-    {
-        int nodeCount = currentRoute.Count;
-
-        if (nodeCount <= 1)
-        {
-            return;
-        }
-
-        bool hitSomething = false;
-        bool cleanPath = true;
-        int j = 1;
-
-        RaycastHit hit;
-        //int layerMask = ~(1 << LayerMask.NameToLayer("Player"));
-        //layerMask = layerMask & ~(1 << LayerMask.NameToLayer("Ai"));
-        int layerMask = 1 << LayerMask.NameToLayer("Floor");
-        layerMask = layerMask & 1 << LayerMask.NameToLayer("Obstacle");
-
-        while (!hitSomething && j < nodeCount - 1)
-        {
-            if (currentRoute[j].worldPosition.y >= transform.position.y + maxStepDistance || currentRoute[j].worldPosition.y <= transform.position.y - maxStepDistance)
+            int nodeCount = currentRoute.Count;
+    
+            if (nodeCount <= 1)
             {
-                Debug.Log("oof");
-                j--;
-                break;
+                return;
             }
-
-            if (Physics.SphereCast(transform.position, testBoxWidth, currentRoute[j].worldPosition - transform.position, out hit, Vector3.Distance(transform.position, currentRoute[j].worldPosition), layerMask))
+    
+            bool hitSomething = false;
+            bool cleanPath = true;
+            int j = 1;
+    
+            RaycastHit hit;
+            //int layerMask = ~(1 << LayerMask.NameToLayer("Player"));
+            //layerMask = layerMask & ~(1 << LayerMask.NameToLayer("Ai"));
+            int layerMask = 1 << LayerMask.NameToLayer("Floor");
+            layerMask = layerMask & 1 << LayerMask.NameToLayer("Obstacle");
+    
+            while (!hitSomething && j < nodeCount - 1)
             {
-                hitSomething = true;
-                j--;
-                break;
-            }
-
-            j++;
-        }
-
-        Debug.Log(hitSomething);
-
-        if (!hitSomething)
-        {
-            return;
-        }
-
-        //while the testBox contains the points of non pathable areas and we aren't on the next point in the room
-        while (!cleanPath && j > 0)
-        {
-            cleanPath = true;
-            foreach (GridNode node in navGrid.grid)
-            {
-                Vector3 start = navGrid.NodeFromGridSpace(currentGridPosition).worldPosition;
-                Vector3 target = currentRoute[j].worldPosition;
-
-                Vector3 dir_1 = (target - start);
-
-                testBox.transform.position = start + (dir_1/2);
-
-                testBox.transform.rotation = Quaternion.LookRotation(dir_1, transform.up);
-
-                testBox.size = new Vector3(testBoxWidth, testBoxWidth, Vector3.Distance(testBox.transform.InverseTransformPoint(start), testBox.transform.InverseTransformPoint(target)));
-
-                //Debug.DrawLine(start, target, Color.green, 1.0f);
-
-                //if node is not pathable but it is in the bounding box then we go one node closer to the player and confirm that the path is not clean.
-                if (!node.pathable && PointInOABB(node, testBox))
+                if (currentRoute[j].worldPosition.y >= transform.position.y + maxStepDistance || currentRoute[j].worldPosition.y <= transform.position.y - maxStepDistance)
                 {
+                    Debug.Log("oof");
                     j--;
-                    cleanPath = false;
                     break;
                 }
-            }
-        }
-
-        if (cleanPath)
-        {
-            Debug.Log("cleaning path " + currentRoute.Count);
-            currentRoute.RemoveRange(0, j);
-            Debug.Log(currentRoute.Count);
-        }
-        //Debug.Break();
-
-    }
-
-    bool PointInOABB(GridNode point, BoxCollider box)
-    {
-        return point.bounds.Intersects(box.bounds);
-    }
-
-    private void GetNeighbouringGridSpaces(GridNode node, List<GridNode> neighbours)
-    {
-        neighbours.Clear();
-        for (int x = -1; x <= 1; x++)
-        {
-            for (int y = -1; y <= 1; y++)
-            {
-                for (int z = -1; z <= 1; z++)
+    
+                if (Physics.SphereCast(transform.position, testBoxWidth, currentRoute[j].worldPosition - transform.position, out hit, Vector3.Distance(transform.position, currentRoute[j].worldPosition), layerMask))
                 {
-                    //The diagonals - != for only straights, == 3 for only basic diagonals
-                    if (Mathf.Abs(x) + Mathf.Abs(y) + Mathf.Abs(z) == 3)
+                    hitSomething = true;
+                    j--;
+                    break;
+                }
+    
+                j++;
+            }
+    
+            Debug.Log(hitSomething);
+    
+            if (!hitSomething)
+            {
+                return;
+            }
+    
+            //while the testBox contains the points of non pathable areas and we aren't on the next point in the room
+            while (!cleanPath && j > 0)
+            {
+                cleanPath = true;
+                foreach (GridNode node in navGrid.grid)
+                {
+                    Vector3 start = navGrid.NodeFromGridSpace(currentGridPosition).worldPosition;
+                    Vector3 target = currentRoute[j].worldPosition;
+    
+                    Vector3 dir_1 = (target - start);
+    
+                    testBox.transform.position = start + (dir_1/2);
+    
+                    testBox.transform.rotation = Quaternion.LookRotation(dir_1, transform.up);
+    
+                    testBox.size = new Vector3(testBoxWidth, testBoxWidth, Vector3.Distance(testBox.transform.InverseTransformPoint(start), testBox.transform.InverseTransformPoint(target)));
+    
+                    //Debug.DrawLine(start, target, Color.green, 1.0f);
+    
+                    //if node is not pathable but it is in the bounding box then we go one node closer to the player and confirm that the path is not clean.
+                    if (!node.pathable && PointInOABB(node, testBox))
                     {
-                        continue;
+                        j--;
+                        cleanPath = false;
+                        break;
                     }
-
-                    int checkX = node.gridPosition.x + x;
-                    int checkY = node.gridPosition.y + y;
-                    int checkZ = node.gridPosition.z + z;
-
-                    // check if the grid space is on the grid
-                    if (checkX >= 0 && checkX < navGrid.gridSize.x &&
-                        checkY >= 0 && checkY < navGrid.gridSize.y &&
-                        checkZ >= 0 && checkZ < navGrid.gridSize.z)
+                }
+            }
+    
+            if (cleanPath)
+            {
+                Debug.Log("cleaning path " + currentRoute.Count);
+                currentRoute.RemoveRange(0, j);
+                Debug.Log(currentRoute.Count);
+            }
+            //Debug.Break();
+    
+        }
+    
+        bool PointInOABB(GridNode point, BoxCollider box)
+        {
+            return point.bounds.Intersects(box.bounds);
+        }
+    
+        private void GetNeighbouringGridSpaces(GridNode node, List<GridNode> neighbours)
+        {
+            neighbours.Clear();
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    for (int z = -1; z <= 1; z++)
                     {
-                        neighbours.Add(navGrid.grid[checkX, checkY, checkZ]);
+                        //The diagonals - != for only straights, == 3 for only basic diagonals
+                        if (Mathf.Abs(x) + Mathf.Abs(y) + Mathf.Abs(z) == 3)
+                        {
+                            continue;
+                        }
+    
+                        int checkX = node.gridPosition.x + x;
+                        int checkY = node.gridPosition.y + y;
+                        int checkZ = node.gridPosition.z + z;
+    
+                        // check if the grid space is on the grid
+                        if (checkX >= 0 && checkX < navGrid.gridSize.x &&
+                            checkY >= 0 && checkY < navGrid.gridSize.y &&
+                            checkZ >= 0 && checkZ < navGrid.gridSize.z)
+                        {
+                            neighbours.Add(navGrid.Node(checkX, checkY, checkZ));
+                        }
                     }
                 }
             }
         }
-    }
-
-    private bool CheckLineToTarget(Vector3 position)
-    {
-        int layerMask = 1 << LayerMask.NameToLayer("Obstacle");
-
-        RaycastHit2D hit;
-
-        if (hit = Physics2D.CircleCast(transform.position, testBoxWidth, position - transform.position, Vector3.Distance(transform.position, position), layerMask))
+    
+        private bool CheckLineToTarget(Vector3 position)
         {
-            return false;
-        }
-
-        return true;
-    }
-
-    public void OnDrawGizmosSelected()
-    {
-        if (currentRoute == null)
-        {
-            return;
-        }
-
-        if (currentRoute.Count > 0)
-        {
-            foreach (GridNode node in currentRoute)
+            int layerMask = 1 << LayerMask.NameToLayer("Obstacle");
+    
+            RaycastHit2D hit;
+    
+            if (hit = Physics2D.CircleCast(transform.position, testBoxWidth, position - transform.position, Vector3.Distance(transform.position, position), layerMask))
             {
-                Gizmos.color = Color.green;
-                Gizmos.DrawSphere(node.worldPosition, 0.01f);
+                return false;
+            }
+    
+            return true;
+        }
+    
+        public void OnDrawGizmosSelected()
+        {
+            if (currentRoute == null)
+            {
+                return;
+            }
+    
+            if (currentRoute.Count > 0)
+            {
+                foreach (GridNode node in currentRoute)
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawSphere(node.worldPosition, 0.01f);
+                }
             }
         }
     }

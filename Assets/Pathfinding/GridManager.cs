@@ -14,6 +14,8 @@ namespace QAI_Pathfinding
     
         private float updateTimer;
         private int nextUpdateIndex = 0;
+
+        private bool canUpdate = true;
     
         // Start is called before the first frame update
         void Start()
@@ -44,6 +46,12 @@ namespace QAI_Pathfinding
                     nextUpdateIndex = 0;
                 }
             }
+        }
+
+        IEnumerator UpdateRoutine()
+        {
+
+            yield return null;
         }
     }
 }

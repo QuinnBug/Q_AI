@@ -59,7 +59,9 @@ namespace QAI_Pathfinding
 
         void CreateGrid()
         {
-            grid = new NativeList<GridNode>();
+            Debug.Log("Creating Grid");
+            grid = new NativeList<GridNode>(Allocator.TempJob);
+            updateJob.grid = grid;
 
             bounds = new Bounds(transform.position, topRightPoint.position - bottomLeftPoint.position);
 
@@ -174,19 +176,12 @@ namespace QAI_Pathfinding
 
         private void OnDrawGizmos()
         {
-            if (grid != null)
+            if (grid.IsCreated && grid.Length > 0)
             {
                 Vector3 size = (nodeSize * 0.25f);
                 size.Scale(transform.lossyScale);
                 foreach (GridNode item in grid)
                 {
-                    if (item == null)
-                    {
-                        Debug.Log("broke");
-                        displayPathable = false;
-                        displayNonPathable = false;
-                    }
-
                     if (item.pathable && displayPathable)
                     {
                         Gizmos.color = new Color(0, 0.2f, 0.8f, 0.6f);
@@ -217,7 +212,6 @@ namespace QAI_Pathfinding
             if (DESTROY_GRID)
             {
                 DESTROY_GRID = false;
-                grid = null;
             }
         }
     }

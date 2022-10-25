@@ -37,7 +37,8 @@ namespace QAI_Pathfinding
     
                 if (grids[nextUpdateIndex].gameObject.activeInHierarchy)
                 {
-                    jobs.Add(grids[nextUpdateIndex].updateJob.Schedule());
+                    grids[nextUpdateIndex].UpdateGrid();
+                    Debug.Log("updating Grid");
                 }
     
                 nextUpdateIndex++;

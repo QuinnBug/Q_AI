@@ -345,7 +345,7 @@ MonoBehaviour:
   minimumExcess: 0.1
   displayPathable: 1
   displayNonPathable: 1
-  nodeSize: {x: 1, y: 1, z: 1}
+  nodeSize: {x: 0.5, y: 0.5, z: 0.5}
   unitHeight: 1
   CREATE_GRID: 0
 --- !u!4 &751996368

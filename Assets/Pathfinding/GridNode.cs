@@ -13,7 +13,7 @@ namespace QAI_Pathfinding
         public float costModifier;
     }
 
-    public struct GridNode 
+    public class GridNode 
     {
         public Vector3 worldPosition;
         public Vector3Int gridPosition;
@@ -40,6 +40,7 @@ namespace QAI_Pathfinding
         }
 
         public void SetPathable(bool value) { pathable = value; }
+
         public void SetWorldPos(Vector3 value) { worldPosition = value; }
 
         public Vector3 worldPosYZero()

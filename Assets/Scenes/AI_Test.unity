@@ -213,7 +213,7 @@ Transform:
   m_GameObject: {fileID: 513241396}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 15, y: 0.1, z: 15}
+  m_LocalScale: {x: 15, y: 0.25, z: 15}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -247,7 +247,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1
+  m_Intensity: 0.2
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -342,9 +342,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bottomLeftPoint: {fileID: 2051914181}
   topRightPoint: {fileID: 1002373937}
-  minimumExcess: 0.1
+  minimumExcess: 0.25
   displayPathable: 1
-  displayNonPathable: 1
+  displayNonPathable: 0
   nodeSize: {x: 0.5, y: 0.5, z: 0.5}
   unitHeight: 1
   CREATE_GRID: 0
@@ -471,7 +471,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1002373936}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 7, y: 2, z: 7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 751996368}
@@ -495,7 +495,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!136 &1445548752
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -597,7 +597,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2051914180}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2, y: 0, z: -2}
+  m_LocalPosition: {x: -7, y: 0, z: -7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 751996368}

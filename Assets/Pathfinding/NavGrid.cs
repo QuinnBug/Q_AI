@@ -30,6 +30,8 @@ namespace QAI_Pathfinding
         internal Vector3 worldBottomLeft;
         private Vector3 worldTopRight;
         private Bounds bounds;
+
+        bool updateLocked = false;
         
 
         [Space]
@@ -68,9 +70,9 @@ namespace QAI_Pathfinding
             //    transform.localPosition.z + (gridWorldSize.z / 2));
 
 
-            for (int worldZ = 0; worldZ < gridSize.z; worldZ++)
+            for (int worldY = 0; worldY < gridSize.y; worldY++)
             {
-                for (int worldY = 0; worldY < gridSize.y; worldY++)
+                for (int worldZ = 0; worldZ < gridSize.z; worldZ++)
                 {
                     for (int worldX = 0; worldX < gridSize.x; worldX++)
                     {
@@ -81,27 +83,35 @@ namespace QAI_Pathfinding
                         currentNodeWorldPoint = transform.parent.TransformPoint(currentNodeWorldPoint);
 
                         GridNode newNode = new GridNode(currentNodeWorldPoint, new Vector3Int(worldX, worldY, worldZ), false, nodeSize);
-                        CheckNodePathable(newNode);
                         grid.Add(newNode);
                     }
                 }
             }
+            UpdateGrid();
         }
 
         public void UpdateGrid()
         {
             Debug.Log(grid.Count);
+            if(!updateLocked) StartCoroutine(UpdateLoop());
+        }
+
+        public IEnumerator UpdateLoop() 
+        {
+            updateLocked = true;
             foreach (GridNode node in grid)
             {
-                //currentNodeWorldPoint = transform.parent.TransformPoint(worldBottomLeft +
-                //    new Vector3(node.gridPosition.x * nodeSize.x, node.gridPosition.y * nodeSize.y, node.gridPosition.z * nodeSize.z));
+                currentNodeWorldPoint = transform.parent.TransformPoint(worldBottomLeft +
+                    new Vector3(node.gridPosition.x * nodeSize.x, node.gridPosition.y * nodeSize.y, node.gridPosition.z * nodeSize.z));
 
-                currentNodeWorldPoint = worldBottomLeft +
-                    new Vector3(node.gridPosition.x * nodeSize.x, node.gridPosition.y * nodeSize.y, node.gridPosition.z * nodeSize.z);
+                //currentNodeWorldPoint = worldBottomLeft +
+                //    new Vector3(node.gridPosition.x * nodeSize.x, node.gridPosition.y * nodeSize.y, node.gridPosition.z * nodeSize.z);
 
                 node.SetWorldPos(currentNodeWorldPoint);
                 CheckNodePathable(node);
+                yield return new WaitForSeconds(10.0f / grid.Count);
             }
+            updateLocked = false;
         }
 
         public void CheckNodePathable(GridNode node)
@@ -110,16 +120,16 @@ namespace QAI_Pathfinding
 
             RaycastHit hit;
 
-            Debug.DrawRay(node.worldPosition + (Vector3.up * (nodeSize.y / 2)), Vector3.down * nodeSize.y, Color.green, 15);
+            //Debug.DrawRay(node.worldPosition + (Vector3.up * (nodeSize.y / 2)), Vector3.down * nodeSize.y, Color.green, 2);
 
-            if (Physics.Raycast(node.worldPosition + (Vector3.up * (nodeSize.y/2)), Vector3.down, out hit, nodeSize.y /*, 1 << LayerMask.NameToLayer("Floor")*/))
+            if (Physics.Raycast(node.worldPosition + (Vector3.up * (nodeSize.y/2)), Vector3.down, out hit, nodeSize.y))
             {
-                //node.worldPosition.y = hit.point.y;
+                node.worldPosition.y = hit.point.y;
 
                 //int layerMask = 1 << LayerMask.NameToLayer("Obstacle");
                 //layerMask += 1 << LayerMask.NameToLayer("Floor");
 
-                Vector3 boxSize = (nodeSize/2) * minimumExcess;
+                Vector3 boxSize = (nodeSize/2) /* * minimumExcess*/;
 
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
@@ -129,15 +139,15 @@ namespace QAI_Pathfinding
                 }
                 else 
                 {
-                    Debug.Log("Hit Obstacle " + node.gridPosition);
+                    //Debug.Log("Hit Obstacle " + node.gridPosition);
                 }
             }
             else 
             {
-                Debug.Log("Didn't Hit Floor " + node.gridPosition);
+                //Debug.Log("Didn't Hit Anything " + node.gridPosition);
             }
 
-            node.SetPathable(pathable);
+            node.pathable = pathable;
         }
 
         internal GridNode NodeFromGridSpace(Vector3Int gridSpace)
